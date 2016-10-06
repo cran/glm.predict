@@ -1,0 +1,16 @@
+42c40bff23be1dfe47c1f9ad397b27e3 *DESCRIPTION
+8433f2b7482c4faa47f02ea02d2d5655 *NAMESPACE
+c2bd3e039f49e5665863451dc1a86dbf *R/discrete.change.R
+158f49af36f5cb553f672dfa7d001c66 *R/discrete.changes.R
+a6db7c3fd0e7a01b5d6f847ac61b7370 *R/glm.predict-internal.R
+b64037021923c92667a88c92274300f9 *R/nominal_discrete.change.R
+b70f58313e7bc468846ba550d03680b9 *R/nominal_discrete.changes.R
+946016b7d85ed3154bb2cc6ff642916e *R/ordinal_discrete.changes.R
+694d00c2e4f1b155836a6179a7dcf50d *R/ordinal_discrete_change.R
+7e74746fa2e5071cc3760ed4199782fa *man/discrete.change.Rd
+0b326421b0c805261965fa68b761577c *man/discrete.changes.Rd
+9c6f856dccb39069edb97be2971b2d99 *man/glm.predict-package.Rd
+a611c1cfcfb19649ec8631c7e9bbb462 *man/nominal_discrete.change.Rd
+67ba9dbf277df0ad070c9f9f32e0c6e4 *man/nominal_discrete.changes.Rd
+3c02804f70ccbec92cce4c6f8542ba98 *man/ordinal_discrete.change.Rd
+b59310cf8bc85eed9fb0ac1ddea5e7a4 *man/ordinal_discrete.changes.Rd
