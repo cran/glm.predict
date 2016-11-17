@@ -1,21 +1,21 @@
-\name{discrete.changes}
-\alias{discrete.changes}
+\name{multinom.predicts}
+\alias{multinom.predicts}
 
 \title{
-predicted values and discrete change
+predicted values for multinom models
 }
 \description{
-The function calculates the predicted values and the difference of
-a range of cases with the confidence interval. It can be used for any
-glm model. - NOTICE: THE FUNCTION DOES NOT WORK WITH : INTERAKTIONS, ONLY WITH *!
+The function calculates the predicted values with the confidence interval. It can be used for a multinom
+model. - NOTICE: THE FUNCTION DOES NOT WORK WITH : INTERAKTIONS, ONLY WITH *!
 }
 \usage{
-discrete.changes(model, values, position=1, sim.count=1000, conf.int=0.95, sigma=NULL)
+multinom.predicts(model, values, data,
+  sim.count=1000, conf.int=0.95, sigma=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{model}{
-the glm-Object generated with glm() or glm.nb()
+the multinom-Object generated with multinom() from package nnet
 }
   \item{values}{
 the values of cases as character in the order how they appear in the summary(model) Estimate
@@ -34,8 +34,8 @@ value1: takes the given value (for example: "5.34" --> 5.34) -
 "F(2)": takes the second level of a factor -
 }
 
-  \item{position}{
-OPTIONAL which variable should be taken for the discrete change, the variable must have at least two values. default: 1
+  \item{data}{
+data.frame used to estimate the model
 }
 
   \item{sim.count}{
@@ -60,11 +60,13 @@ OPTIONAL the variance-covairance matrix, can be changed when having for exaple r
 }
 
 \examples{
-model1 = glm(Sex ~ Height + Smoke + Pulse, data=MASS::survey, family=binomial(link=logit))
+data = MASS::survey
+data$Clap = relevel(data$Clap,ref="Neither")
+model1 = nnet::multinom(Clap ~ Sex + Height, data=data)
 summary(model1)
-# comparing person with hight 150 to 160, 160 to 170, 170 to 180, 180 to 190 
-# with all combination of(non-)smokers and a median of pulse 
-discrete.changes(model1, "150-190,10;F;median")
+# comparing a woman to a man
+# with the values 160, 170, 180 and 190 for the height
+multinom.predicts(model1, "0-1;160-190,10", data)
 }
 
 \keyword{ models }

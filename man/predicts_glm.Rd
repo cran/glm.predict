@@ -1,16 +1,15 @@
-\name{discrete.changes}
-\alias{discrete.changes}
+\name{glm.predicts}
+\alias{glm.predicts}
 
 \title{
-predicted values and discrete change
+predicted value of a glm-model
 }
 \description{
-The function calculates the predicted values and the difference of
-a range of cases with the confidence interval. It can be used for any
+The function calculates the predicted value with the confidence interval. It can be used for any
 glm model. - NOTICE: THE FUNCTION DOES NOT WORK WITH : INTERAKTIONS, ONLY WITH *!
 }
 \usage{
-discrete.changes(model, values, position=1, sim.count=1000, conf.int=0.95, sigma=NULL)
+glm.predicts(model, values, sim.count=1000, conf.int=0.95, sigma=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -32,10 +31,6 @@ value1,value2,value3,...: takes the given values (for example: "160,180" --> 160
 value1: takes the given value (for example: "5.34" --> 5.34) -
 "F": takes all values of a factor -
 "F(2)": takes the second level of a factor -
-}
-
-  \item{position}{
-OPTIONAL which variable should be taken for the discrete change, the variable must have at least two values. default: 1
 }
 
   \item{sim.count}{
@@ -64,7 +59,7 @@ model1 = glm(Sex ~ Height + Smoke + Pulse, data=MASS::survey, family=binomial(li
 summary(model1)
 # comparing person with hight 150 to 160, 160 to 170, 170 to 180, 180 to 190 
 # with all combination of(non-)smokers and a median of pulse 
-discrete.changes(model1, "150-190,10;F;median")
+glm.predicts(model1, "150-190,10;F;median")
 }
 
 \keyword{ models }

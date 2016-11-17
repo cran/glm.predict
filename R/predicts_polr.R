@@ -1,4 +1,4 @@
-nominal_discrete.changes = function(model, values, data, position=1, sim.count=1000, conf.int=0.95, sigma=NULL){
+polr.predicts = function(model, values, sim.count=1000, conf.int=0.95,sigma=NULL){
   if(!is.character(values)){
     stop("values must be given as character!")
   }
@@ -8,25 +8,24 @@ nominal_discrete.changes = function(model, values, data, position=1, sim.count=1
   # check if any interaction
   formula = getFormulas(model) # variable names [[1]] and interaction positions[[2]]
   
-  value = getValues_nominal(model,values,formula[[1]],data) # values as list [[1]] and positions of factors [[2]]
+  value = getValues_ordinal(model,values,formula[[1]]) # values as list [[1]] and positions of factors [[2]]
   
-  products = getProducts_dc(value,position)
+  products = getProducts(value)
   
   values.list = value[[1]]
   is.factor = value[[2]]
   n = length(values.list)
   rows = products[length(products)]
   
-  result = getNames_dc(formula[[1]],position)
+  result = getNames(formula[[1]])
   result = cbind(result,level=NA)
   
   n.levels = length(model$lev)
   levels = model$lev
   
   for(r in 1:rows){
-    row.values1 = c(1)
-    row.values2 = c(1)
-    data.frame.position = 10
+    row.values = c()
+    data.frame.position = 4
     for(i in 1:n){
       current.product = products[i]
       current.values = values.list[[i]]
@@ -35,50 +34,28 @@ nominal_discrete.changes = function(model, values, data, position=1, sim.count=1
       }else{
         preproduct = products[i-1]
       }
-      v1 = floor((r-1)%%current.product/preproduct)+1
+      v = floor((r-1)%%current.product/preproduct)+1
       
       row.from = (r-1)*n.levels + 1
       row.to = r*n.levels
       
-      if(i == position & is.factor[i]){
-        combinations = getCombinations(length(current.values[,1]))
-        f.v1 = combinations[v1,1]
-        f.v2 = combinations[v1,2]
-        row.values1 = c(row.values1,current.values[f.v1,])
-        row.values2 = c(row.values2,current.values[f.v2,])
-        
-        # labels
-        result[row.from:row.to,data.frame.position] = getLabel_nominal(model,formula[[1]][i],f.v1,data)
-        result[row.from:row.to,data.frame.position+1] = getLabel_nominal(model,formula[[1]][i],f.v2,data)
-        data.frame.position = data.frame.position + 2
-      }else if(i==position){
-        v2 = v1+1
-        row.values1 = c(row.values1,current.values[v1])
-        row.values2 = c(row.values2,current.values[v2])
-        
-        # labels
-        result[row.from:row.to,data.frame.position] = current.values[v1]
-        result[row.from:row.to,data.frame.position+1] = current.values[v2]
-        data.frame.position = data.frame.position + 2
-      }else if(is.factor[i]){
-        row.values1 = c(row.values1,current.values[v1,])
-        row.values2 = c(row.values2,current.values[v1,])
+      if(is.factor[i]){
+        row.values = c(row.values,current.values[v,])
         
         # labels
         pos = 1
-        for(p in 1:length(current.values[v1,])){
-          if(current.values[v1,][p]==1){
+        for(p in 1:length(current.values[v,])){
+          if(current.values[v,][p]==1){
             pos = p+1
           }
         }
-        result[row.from:row.to,data.frame.position] = getLabel_nominal(model,formula[[1]][i],pos,data)
+        result[row.from:row.to,data.frame.position] = getLabel_ordinal(model,formula[[1]][i],pos)
         data.frame.position = data.frame.position + 1
       }else{
-        row.values1 = c(row.values1,current.values[v1])
-        row.values2 = c(row.values2,current.values[v1])
+        row.values = c(row.values,current.values[v])
         
         # labels
-        result[row.from:row.to,data.frame.position] = current.values[v1]
+        result[row.from:row.to,data.frame.position] = current.values[v]
         data.frame.position = data.frame.position + 1
       }
     }
@@ -99,47 +76,33 @@ nominal_discrete.changes = function(model, values, data, position=1, sim.count=1
       if(ia==1){ # *
         if(is.factor[pos]){
           n.dummies = length(values.list[[pos]][1,])
-          term.part1.v1 = row.values1[pos.row.values:(pos.row.values+n.dummies-1)]
-          term.part1.v2 = row.values2[pos.row.values:(pos.row.values+n.dummies-1)]
+          term.part1.v = row.values[pos.row.values:(pos.row.values+n.dummies-1)]
           pos.row.values = pos.row.values + n.dummies
         }else{
-          term.part1.v1 = row.values1[pos.row.values]
-          term.part1.v2 = row.values2[pos.row.values]
+          term.part1.v = row.values[pos.row.values]
           pos.row.values = pos.row.values + 1
         }
         if(is.factor[pos+1]){
           n.dummies = length(values.list[[pos+1]][1,])
-          term.part2.v1 = row.values1[pos.row.values:(pos.row.values+n.dummies-1)]
-          term.part2.v2 = row.values2[pos.row.values:(pos.row.values+n.dummies-1)]
+          term.part2.v = row.values[pos.row.values:(pos.row.values+n.dummies-1)]
           pos.row.values = pos.row.values + n.dummies
         }else{
-          term.part2.v1 = row.values1[pos.row.values]
-          term.part2.v2 = row.values2[pos.row.values]
+          term.part2.v = row.values[pos.row.values]
           pos.row.values = pos.row.values + 1
         }
-        row.values1 = c(row.values1,term.part1.v1*term.part2.v1)
-        row.values2 = c(row.values2,term.part1.v2*term.part2.v2)
+        row.values = c(row.values,term.part1.v*term.part2.v)
         pos = pos + 2
       }
     }
-    subresult = nominal_discrete.change(model,row.values1,row.values2,sim.count,conf.int,sigma)
+    subresult = polr.predict(model,row.values,sim.count,conf.int, sigma)
     
       for(k in 1:n.levels){
         current.row = (r-1)*n.levels + k
-        result[current.row,]$mean1 = subresult[k,1]
-        result[current.row,]$mean2 = subresult[k,4]
-        result[current.row,]$lower1 = subresult[k,2]
-        result[current.row,]$upper1 = subresult[k,3]
-        result[current.row,]$lower2 = subresult[k,5]
-        result[current.row,]$upper2 = subresult[k,6]
-        result[current.row,]$mean.diff = subresult[k,7]
-        result[current.row,]$lower.diff = subresult[k,8]
-        result[current.row,]$upper.diff = subresult[k,9]
+        result[current.row,]$mean = subresult[k,1]
+        result[current.row,]$lower = subresult[k,2]
+        result[current.row,]$upper = subresult[k,3]
         result[current.row,]$level = levels[k]
       }
-    
-    #     print(paste0(r,"-v1: ",toString(row.values1)))
-    #     print(paste0(r,"-v2: ",toString(row.values2)))
   }
   return(result)
 }
@@ -171,19 +134,20 @@ getFormulas = function(model){
   return(list(temp.formula,ia))
 }
 
-getValues_nominal = function(model,values,formula,data){
+getValues_ordinal = function(model,values,formula){
   
   result = list()
   pos = 1
   current.values = NA
-  use.data.stop.error = length(data)
+  
   
   values.vector = unlist(strsplit(values,";"))
   is.factor = rep(F,length(values.vector))
   for(value in values.vector){
     if(grepl("^mode$",value,ignore.case = TRUE)){ # Mode
       varName = formula[pos]
-      if(!is.null(data)){
+      if(!is.null(model$model)){
+        data = model$model
         data.v = data[,grep(varName,colnames(data),value=T)[1]]
         mode = Mode(data.v,na.rm=T)
         if(is.numeric(mode)){
@@ -198,6 +162,7 @@ getValues_nominal = function(model,values,formula,data){
     } # mode
     else if(grepl("^mean$",value,ignore.case = TRUE)){ # mean
       varName = formula[pos]
+      data = model$model
       data.v = data[,varName]
       if(!is.numeric(data.v)){
         stop("Cannot calculate the mean of a non numeric variable")
@@ -206,8 +171,9 @@ getValues_nominal = function(model,values,formula,data){
     } # mean
     else if(grepl("^median$",value,ignore.case = TRUE)){ # median
       varName = formula[pos]
+      data = model$model
       data.v = data[,varName]
-      if(!is.numeric(data)){
+      if(!is.numeric(data.v)){
         stop("Cannot calculate the median of a non numeric variable")
       }
       current.values = median(data.v, na.rm=T)
@@ -215,6 +181,7 @@ getValues_nominal = function(model,values,formula,data){
     else if(grepl("^Q[0-9]+$",value,ignore.case = TRUE)){ # quantile
       n.quantile = as.numeric(unlist(strsplit(value,"[Q\\]")))[2]
       varName = formula[pos]
+      data = model$model
       data.v = data[,varName]
       if(!is.numeric(data.v)){
         stop("Cannot calculate the quantiles of a non numeric variable")
@@ -223,6 +190,7 @@ getValues_nominal = function(model,values,formula,data){
     } # quantile
     else if(grepl("^min$",value,ignore.case = TRUE)){ # min
       varName = formula[pos]
+      data = model$model
       data.v = data[,varName]
       if(!is.numeric(data.v)){
         stop("Cannot calculate the minimum of a non numeric variable")
@@ -231,13 +199,14 @@ getValues_nominal = function(model,values,formula,data){
     } # min
     else if(grepl("^max$",value,ignore.case = TRUE)){ # max
       varName = formula[pos]
+      data = model$model
       data.v = data[,varName]
       if(!is.numeric(data.v)){
         stop("Cannot calculate the maximum of a non numeric variable")
       }
       current.values = max(data.v,na.rm = T)
     } # max
-	else if(grepl("^F[0-9]+\\([0-9]+\\)$",value,ignore.case = TRUE)){ # single factor (old version)
+    else if(grepl("^F[0-9]+\\([0-9]+\\)$",value,ignore.case = TRUE)){ # single factor (old version)
       components = as.numeric(unlist(strsplit(value,"[F\\(\\)]")))
       n = components[2]
       x = components[3]
@@ -247,6 +216,7 @@ getValues_nominal = function(model,values,formula,data){
     } # single factor value (old version)
     else if(grepl("^F\\([0-9]+\\)$",value,ignore.case = TRUE)){ # single factor
       components = as.numeric(unlist(strsplit(value,"[F\\(\\)]")))
+      data = model$model
       varName = formula[pos]
       data.v = data[,varName]
       n = length(levels(data.v))
@@ -261,6 +231,7 @@ getValues_nominal = function(model,values,formula,data){
       is.factor[pos] = T
     } # factor (old version)
     else if(grepl("^F$",value,ignore.case = TRUE)){ # factor
+      data = model$model
       varName = formula[pos]
       data.v = data[,varName]
       n = length(levels(data.v))
@@ -308,7 +279,7 @@ getValues_nominal = function(model,values,formula,data){
   return(list(result,is.factor))
 }
 
-getProducts_dc = function(value,position){
+getProducts = function(value){
   values.list = value[[1]]
   is.factor = value[[2]]
   n = length(values.list)
@@ -323,14 +294,7 @@ getProducts_dc = function(value,position){
     }else{
       variable.length = length(variable)
     }
-    if(i == position & !is.factor[i]){
-      result = result * (variable.length-1)
-    }else if(i == position & is.factor[i]){
-      gauss = (variable.length)*(variable.length-1)/2
-      result = result * gauss
-    }else{
-      result = result * variable.length
-    }
+    result = result * variable.length
     results = c(results,result)
   }
   return(results)
@@ -355,21 +319,18 @@ getCombinations = function(n){
   return(grid)
 }
 
-getNames_dc = function(names,position){
-  new.names = c("mean1","mean2","lower1","upper1","lower2","upper2","mean.diff","lower.diff","upper.diff")
+getNames = function(names){
+  new.names = c("mean","lower","upper")
   for(i in 1:length(names)){
-    if(i != position){
-      new.names = c(new.names,names[i])
-    }else{
-      new.names = c(new.names,paste0(names[i],".1"),paste0(names[i],".2"))
-    }
+    new.names = c(new.names,names[i])
   }
   result = data.frame(t(rep(NA,length(new.names))))
   colnames(result) = new.names
   return(result)
 }
 
-getLabel_nominal = function(model,varName,pos,data){
+getLabel_ordinal = function(model,varName,pos){
+  data = model$model
   data.v = data[,grep(varName,colnames(data),value=T)[1]]
   labels = levels(data.v)
   return(labels[pos])

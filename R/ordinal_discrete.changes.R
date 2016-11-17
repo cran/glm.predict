@@ -3,19 +3,21 @@ ordinal_discrete.changes = function(model, values, position=1, sim.count=1000, c
     stop("values must be given as character!")
   }
   
+  values = gsub("\\s","",values)
+  
   # check if any interaction
   formula = getFormulas(model) # variable names [[1]] and interaction positions[[2]]
   
   value = getValues_ordinal(model,values,formula[[1]]) # values as list [[1]] and positions of factors [[2]]
   
-  products = getProducts(value,position)
+  products = getProducts_dc(value,position)
   
   values.list = value[[1]]
   is.factor = value[[2]]
   n = length(values.list)
   rows = products[length(products)]
   
-  result = getNames(formula[[1]],position)
+  result = getNames_dc(formula[[1]],position)
   result = cbind(result,level=NA)
   
   n.levels = length(model$lev)
@@ -251,7 +253,7 @@ getValues_ordinal = function(model,values,formula){
     } # single factor value (old version)
     else if(grepl("^F\\([0-9]+\\)$",value,ignore.case = TRUE)){ # single factor
       components = as.numeric(unlist(strsplit(value,"[F\\(\\)]")))
-      data = model$data
+      data = model$model
       varName = formula[pos]
       data.v = data[,varName]
       n = length(levels(data.v))
@@ -266,7 +268,7 @@ getValues_ordinal = function(model,values,formula){
       is.factor[pos] = T
     } # factor (old version)
     else if(grepl("^F$",value,ignore.case = TRUE)){ # factor
-      data = model$data
+      data = model$model
       varName = formula[pos]
       data.v = data[,varName]
       n = length(levels(data.v))
@@ -314,7 +316,7 @@ getValues_ordinal = function(model,values,formula){
   return(list(result,is.factor))
 }
 
-getProducts = function(value,position){
+getProducts_dc = function(value,position){
   values.list = value[[1]]
   is.factor = value[[2]]
   n = length(values.list)
@@ -361,7 +363,7 @@ getCombinations = function(n){
   return(grid)
 }
 
-getNames = function(names,position){
+getNames_dc = function(names,position){
   new.names = c("mean1","mean2","lower1","upper1","lower2","upper2","mean.diff","lower.diff","upper.diff")
   for(i in 1:length(names)){
     if(i != position){
