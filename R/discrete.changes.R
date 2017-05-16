@@ -1,4 +1,4 @@
-discrete.changes = function(model, values, position=1, sim.count=1000, conf.int=0.95, sigma=NULL){
+discrete.changes = function(model, values, position=1, sim.count=1000, conf.int=0.95, sigma=NULL,set.seed=NULL){
   if(!is.character(values)){
     stop("values must be given as character!")
   }
@@ -115,7 +115,7 @@ discrete.changes = function(model, values, position=1, sim.count=1000, conf.int=
         pos = pos + 2
       }
     }
-    subresult = discrete.change(model,row.values1,row.values2,sim.count,conf.int,sigma)
+    subresult = discrete.change(model,row.values1,row.values2,sim.count,conf.int,sigma,set.seed)
     
     result[r,]$mean1 = subresult[1,1]
     result[r,]$mean2 = subresult[2,1]
@@ -183,9 +183,9 @@ getValues = function(model,values,formula){
         if(is.numeric(mode)){
           current.values = mode
         }else{
-          n = length(levels(data.v))
+          n = length(levels(as.factor(as.character(data.v))))
           dummies = getDummies(n)
-          current.values = matrix(dummies[which(levels(data.v)==mode),],nrow=1)
+          current.values = matrix(dummies[which(levels(as.factor(as.character(data.v)))==mode),],nrow=1)
           is.factor[pos] = T
         }
       }
@@ -273,7 +273,7 @@ getValues = function(model,values,formula){
       }
       varName = formula[pos]
       data.v = data[,varName]
-      n = length(levels(data.v))
+      n = length(levels(as.factor(as.character(data.v))))
       x = components[3]
       dummies = getDummies(n)
       current.values = matrix(dummies[x,],nrow=1)
@@ -292,7 +292,7 @@ getValues = function(model,values,formula){
       }
       varName = formula[pos]
       data.v = data[,varName]
-      n = length(levels(data.v))
+      n = length(levels(as.factor(as.character(data.v))))
       current.values = getDummies(n)
       is.factor[pos] = T
     } # factor
@@ -365,25 +365,6 @@ getProducts_dc = function(value,position){
   return(results)
 }
 
-getDummies = function(n){
-  if(n == 2){
-    return(matrix(0:1,nrow=2,ncol=1))
-  }
-  n = n-1
-  I = iterpc::iterpc(2, n, label=c(0,1), order=T, replace=T)
-  grid = iterpc::getall(I)
-  grid = grid[order(rowSums(grid)),]
-  grid = subset(grid,rowSums(grid)<=1)
-  grid = grid[,n:1]
-  return(grid)
-}
-
-getCombinations = function(n){
-  I = iterpc::iterpc(n, 2)
-  grid = iterpc::getall(I)
-  return(grid)
-}
-
 getNames_dc = function(names,position){
   new.names = c("mean1","mean2","lower1","upper1","lower2","upper2","mean.diff","lower.diff","upper.diff")
   for(i in 1:length(names)){
@@ -405,7 +386,7 @@ getLabel = function(model,varName,pos){
     data = model$data
   }
   data.v = data[,grep(varName,colnames(data),value=T)[1]]
-  labels = levels(data.v)
+  labels = levels(as.factor(as.character(data.v)))
   return(labels[pos])
 }
 

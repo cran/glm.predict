@@ -1,4 +1,4 @@
-glm.predicts = function(model, values, sim.count=1000, conf.int=0.95, sigma=NULL){
+glm.predicts = function(model, values, sim.count=1000, conf.int=0.95, sigma=NULL, set.seed=NULL){
   if(!is.character(values)){
     stop("values must be given as character!")
   }
@@ -87,7 +87,7 @@ glm.predicts = function(model, values, sim.count=1000, conf.int=0.95, sigma=NULL
         pos = pos + 2
       }
     }
-    subresult = glm.predict_(model,row.values,sim.count,conf.int,sigma)
+    subresult = glm.predict_(model,row.values,sim.count,conf.int,sigma,set.seed)
     
     result[r,]$mean = subresult[1,1]
     result[r,]$lower = subresult[1,2]
@@ -319,25 +319,6 @@ getProducts = function(value){
     results = c(results,result)
   }
   return(results)
-}
-
-getDummies = function(n){
-  if(n == 2){
-    return(matrix(0:1,nrow=2,ncol=1))
-  }
-  n = n-1
-  I = iterpc::iterpc(2, n, label=c(0,1), order=T, replace=T)
-  grid = iterpc::getall(I)
-  grid = grid[order(rowSums(grid)),]
-  grid = subset(grid,rowSums(grid)<=1)
-  grid = grid[,n:1]
-  return(grid)
-}
-
-getCombinations = function(n){
-  I = iterpc::iterpc(n, 2)
-  grid = iterpc::getall(I)
-  return(grid)
 }
 
 getNames = function(names){
