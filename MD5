@@ -1,4 +1,4 @@
-dd2db64f642c6dab1635b07cdd123c83 *DESCRIPTION
+90c7a77f716550c9a69a884bbf7bb88d *DESCRIPTION
 726700a65c12a32458270136fa0a7ab0 *NAMESPACE
 aac7a8dcc0f3cdf7d91ff0393d23ab73 *R/basepredict.R
 5dc3da2bc871e4e0534ce552a2b263a6 *R/basepredict.glm.R
@@ -10,7 +10,7 @@ c1dcece91ece8d0a3b003810429786b2 *R/dc.R
 088f56d9923b949a6f7a255e2a6132be *R/dc.polr.R
 0b958fb6707588f0ace5838f9aeae907 *R/discrete.change.R
 2eb48b32c5666567a08f37e20290b96e *R/discrete.changes.R
-da9cdb59b2b645f9b88f415417c00502 *R/getBaseCombinations.R
+d1c619ea9a886d8070a9f30c33c118eb *R/getBaseCombinations.R
 77c17dcdb1488d84f13a25bc7eca31ab *R/getCombinations.R
 03e518d3f2ee0749018d464928e37c6a *R/getDummies.R
 832d38335e3be437ddc88b0923ccd979 *R/getFactorCombinations.R
