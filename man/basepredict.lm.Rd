@@ -1,20 +1,19 @@
-\name{glm.predict_}
-\alias{glm.predict_}
+\name{basepredict.lm}
+\alias{basepredict.lm}
 
 \title{
 predicted value
 }
 \description{
-The function calculates the predicted value with the confidence interval. It can be used for any
-glm model.
+The function calculates the predicted value with the confidence interval for a lm model.
 }
 \usage{
-glm.predict_(model, values, sim.count=1000, conf.int=0.95, sigma=NULL, set.seed=NULL)
+\method{basepredict}{lm}(model, values, sim.count=1000, conf.int=0.95, sigma=NULL, set.seed=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{model}{
-the glm-Object generated with glm() or glm.nb()
+the model Object generated with lm()
 }
   \item{values}{
 the values of the case as vector in the order how they appear in the summary(model) Estimate
@@ -36,7 +35,7 @@ OPTIONAL set a seed for the random number generator
   The function makes a simulation for the two cases and compares them to each other. 
 }
 \value{
-  The output is a 1x3 matrix have in the first colone the predicted value, in the second
+  The output is a 3x3 matrix haveing in the first colone the predicted value, in the second
   colone the lower value of the confidence interval and in the third colone the upper value
   of the confidence interval.
 }
@@ -46,10 +45,10 @@ OPTIONAL set a seed for the random number generator
 }
 
 \examples{
-model1 = glm(Sex ~ Height + Smoke + Pulse, data=MASS::survey, family=binomial(link=logit))
+model1 = lm(Pulse ~ Height + Smoke, data=MASS::survey)
 summary(model1)
-# comparing a person with the height 150cm to 151cm
-glm.predict_(model1, c(1,150,1,0,0,mean(MASS::survey$Pulse,na.rm=TRUE)))
+# predicted pulse value of a non smoking person with height 150
+basepredict(model1, c(1,150,1,0,0))
 }
 
 \keyword{ models }

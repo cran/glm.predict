@@ -1,21 +1,21 @@
-\name{dc.polr}
-\alias{dc.polr}
+\name{dc.lm}
+\alias{dc.lm}
 
 \title{
 predicted values and discrete change
 }
 \description{
 The function calculates the predicted values and the difference of
-two cases with the confidence interval. It can be used for a polr model.
+two cases with the confidence interval for a lm model.
 }
 \usage{
-\method{dc}{polr}(model, values = NULL, sim.count = 1000, conf.int = 0.95, 
+\method{dc}{lm}(model, values = NULL, sim.count = 1000, conf.int = 0.95, 
   sigma = NULL, set.seed = NULL, values1 = NULL, values2 = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{model}{
-the model-Object generated with polr()
+the model-Object generated with lm()
 }
   \item{values}{
 the values of case 1 and 2 as vector in the order how they appear in the summary(model) Estimate. Values is if values1 and values2 are specified after each other in the same vector. Either values or values1 and values2 have to be specified.
@@ -53,13 +53,13 @@ the values of case 2 as vector in the order how they appear in the summary(model
 }
 
 \examples{
-data = MASS::survey
-data$Smoke = ordered(data$Smoke, levels = c("Never", "Occas", "Regul", "Heavy"))
-model1 = polr(Smoke ~ Height + Pulse, data=data)
+model1 = lm(Pulse ~ Height + Smoke, data=MASS::survey)
 summary(model1)
-dc(model1, values1 = c(150,mean(MASS::survey$Pulse,na.rm=TRUE)),
-  values2 = c(151,mean(MASS::survey$Pulse,na.rm=TRUE)))
-# all differences are significant as the confidence intervals do not include 0
+# comparing a person with the height 150cm to 151cm
+dc(model1, values1 = c(1,150,1,0,0),
+  values2 = c(1,151,1,0,0))
+# the difference is not significant, because the confidence interval
+# includes the 0
 }
 
 \keyword{ models }
