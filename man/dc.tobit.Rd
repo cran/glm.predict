@@ -1,23 +1,22 @@
-\name{dc}
-\alias{dc}
+\name{dc.tobit}
+\alias{dc.tobit}
 
 \title{
 predicted values and discrete change
 }
 \description{
-The generic function calculates the predicted values and the difference of
-two cases with the confidence interval. 
-It can be used for any lm(), glm(), glm.nb(), polr(), tobit() or multinom() model.
+The function calculates the predicted values and the difference of
+two cases with the confidence interval for a tobit model.
 }
 \usage{
-dc(model, values = NULL, sim.count = 1000, conf.int = 0.95, 
+\method{dc}{tobit}(model, values = NULL, sim.count = 1000, conf.int = 0.95, 
   sigma = NULL, set.seed = NULL, values1 = NULL, values2 = NULL,
   type = c("any", "simulation", "bootstrap"))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{model}{
-the model-Object generated with glm(), glm.nb(), polr() or multinom()
+the model-Object generated with tobit()
 }
   \item{values}{
 the values of case 1 and 2 as vector in the order how they appear in the summary(model) Estimate. Values is if values1 and values2 are specified after each other in the same vector. Either values or values1 and values2 have to be specified.
@@ -41,8 +40,7 @@ the values of case 1 as vector in the order how they appear in the summary(model
 the values of case 2 as vector in the order how they appear in the summary(model) Estimate. Has to be defined if values is not defined.
 }
   \item{type}{
-OPTIONAL choose between simulation and bootstrap, "any" chooses between those two
-according to the number of cases (bootstrap if n < 1000)
+OPTIONAL only simulation is supported for tobit()
 }
 }
 \details{
@@ -59,14 +57,14 @@ according to the number of cases (bootstrap if n < 1000)
 }
 
 \examples{
-model1 = glm(Sex ~ Height + Smoke + Pulse, data=MASS::survey, family=binomial(link=logit))
+library(AER)
+model1 = tobit(Age ~ Height + Pulse, right = 65, data=MASS::survey)
 summary(model1)
 # comparing a person with the height 150cm to 151cm
-dc(model1, values1 = c(1,150,1,0,0,mean(MASS::survey$Pulse,na.rm=TRUE)),
-  values2 = c(1,151,1,0,0,mean(MASS::survey$Pulse,na.rm=TRUE)))
-# the higher person has a greater probability to be a man
-# the difference is significant, because the confidence interval
-# does not include the 0
+dc(model1, values1 = c(1,160,80),
+  values2 = c(1,170,80))
+# the difference is not significant, because the confidence interval
+# includes the 0
 }
 
 \keyword{ models }

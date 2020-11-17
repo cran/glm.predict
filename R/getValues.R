@@ -4,10 +4,22 @@ getValues = function(values, data){
   pos = 1
   current.values = NA
   
+  
+  
   values.vector = unlist(strsplit(values,";"))
-  is.factor = rep(F,length(values.vector))
+  is_factor = sapply(data[,-1], is.factor)
+  
   for(value in values.vector){
     varName = colnames(data)[pos+1] # +1 because of y
+    if(grepl("F", value)){
+      if(!is_factor[pos]){
+        stop(paste0(varName, " is specified as a factor in the values argument, but it is numeric."))
+      }
+    }else{
+      if(is_factor[pos] & !grepl("mode", value)){
+        stop(paste0(varName, " is specified as numeric in the values argument, but it is a factor/character."))
+      }
+    }
     var = data[[varName]]
     if(grepl("^mode$",value,ignore.case = TRUE)){ # Mode
       mode = Mode(var,na.rm=T)
@@ -17,7 +29,6 @@ getValues = function(values, data){
         n = length(levels(var))
         dummies = getDummies(n)
         current.values = matrix(dummies[which(levels(var)==mode),],nrow=1)
-        is.factor[pos] = T
       }
     } # mode
     else if(grepl("^mean$",value,ignore.case = TRUE)){ # mean
@@ -51,24 +62,32 @@ getValues = function(values, data){
       }
       current.values = max(var,na.rm = T)
     } # max
-    else if(grepl("^F\\([0-9]+\\)$",value,ignore.case = TRUE)){ # single factor
-      components = as.numeric(unlist(strsplit(value,"[F\\(\\)]")))
+    else if(grepl("^F\\([0-9]+(,[0-9]+)*\\)$",value,ignore.case = TRUE)){ # specific levels of factor
+      components = as.numeric(unlist(strsplit(value,"[F\\(,\\)]")))
       n = length(levels(var))
-      x = components[3]
+      x = components[c(-1,-2)]
       dummies = getDummies(n)
-      current.values = matrix(dummies[x,],nrow=1)
-      is.factor[pos] = T
-    } # single factor value
+      current.values = matrix(dummies[x,], nrow = length(x))
+      
+    } # get specific factor levels
     else if(grepl("^F$",value,ignore.case = TRUE)){ # factor
       n = length(levels(var))
       current.values = getDummies(n)
-      is.factor[pos] = T
+      
     } # factor
-    else if(grepl("^(-?[0-9]+(\\.[0-9]+)?)-(-?[0-9]+(\\.[0-9]+)?),(-?[0-9]+(\\.[0-9]+)?)$",value)){ # from-to,by
+    else if(grepl("^(-?[0-9]+(\\.[0-9]+)?)-(-?[0-9]+(\\.[0-9]+)?),([0-9]+(\\.[0-9]+)?)$",value)){ # from-to,by
       components = as.numeric(unlist(strsplit(value,"[-,]")))
+      if(is.na(components[1])){
+        components = components[-1]
+        components[1] = components[1] * -1
+      }
+      if(is.na(components[2])){
+        components = components[-2]
+        components[2] = components[2] * -1
+      }
       i.container = c()
       for(i in 1:length(components)){
-        if(components[i]==""){
+        if(is.na(components[i]) || components[i]==""){
           components[i+1] = paste0("-",components[i+1])
           i.container = c(i.container,i)
         }
@@ -76,13 +95,14 @@ getValues = function(values, data){
       if(length(i.container)>0){
         components = components[-i.container]
       }
+      components = as.numeric(components)
       current.values = seq(from=components[1],to=components[2],by=components[3])
     } # from-to,by
     else if(grepl("^(-?[0-9]+(\\.[0-9]+)?)-(-?[0-9]+(\\.[0-9]+)?)$",value)){ # from-to
       components = unlist(strsplit(value,"-"))
       i.container = c()
       for(i in 1:length(components)){
-        if(components[i]==""){
+        if(is.na(components[i]) || components[i]==""){
           components[i+1] = paste0("-",components[i+1])
           i.container = c(i.container,i)
         }
@@ -90,6 +110,7 @@ getValues = function(values, data){
       if(length(i.container)>0){
         components = components[-i.container]
       }
+      components = as.numeric(components)
       current.values = components[1]:components[2]
     } # from-to
     else if(grepl("^(-?[0-9]+(\\.[0-9]+)?)(,-?[0-9]+(\\.[0-9]+)?)*$",value)){ # value1[, value2 [, ...]]
@@ -139,5 +160,5 @@ getValues = function(values, data){
     result = c(result,list(current.values))
     pos = pos + 1
   }
-  return(list(result,is.factor))
+  return(list(result,is_factor))
 }

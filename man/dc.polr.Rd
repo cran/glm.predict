@@ -10,7 +10,8 @@ two cases with the confidence interval. It can be used for a polr model.
 }
 \usage{
 \method{dc}{polr}(model, values = NULL, sim.count = 1000, conf.int = 0.95, 
-  sigma = NULL, set.seed = NULL, values1 = NULL, values2 = NULL)
+  sigma = NULL, set.seed = NULL, values1 = NULL, values2 = NULL,
+  type = c("any", "simulation", "bootstrap"))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -27,24 +28,28 @@ OPTIONAL numbers of simulations to be done by the function. default: 1000
 OPTIONAL the confidence interval used by the function. default: 0.95
 }
   \item{sigma}{
-OPTIONAL the variance-covairance matrix, can be changed when having for exaple robust or clustered vcov. default: vcov(model)
+OPTIONAL the variance-covariance matrix, can be changed when having for example robust or clustered vcov. default: vcov(model)
 }
   \item{set.seed}{
 OPTIONAL set a seed for the random number generator
 }
   \item{values1}{
-the values of case 1 as vector in the order how they appear in the summary(model) Estimate. Has to be definied if values is not definied.
+the values of case 1 as vector in the order how they appear in the summary(model) Estimate. Has to be defined if values is not defined.
 }
   \item{values2}{
-the values of case 2 as vector in the order how they appear in the summary(model) Estimate. Has to be definied if values is not definied.
+the values of case 2 as vector in the order how they appear in the summary(model) Estimate. Has to be defined if values is not defined.
+}
+  \item{type}{
+OPTIONAL choose between simulation and bootstrap, "any" chooses between those two
+according to the number of cases (bootstrap if n < 1000)
 }
 }
 \details{
   The function makes a simulation for the two cases and compares them to each other. 
 }
 \value{
-  The output is a matrix have in the first colone the predicted values, in the second
-  colone the lower value of the confidence interval and in the third colone the upper value
+  The output is a matrix have in the first column the predicted values, in the second
+  column the lower value of the confidence interval and in the third column the upper value
   of the confidence interval.
 }
 
@@ -53,6 +58,7 @@ the values of case 2 as vector in the order how they appear in the summary(model
 }
 
 \examples{
+\dontrun{
 data = MASS::survey
 data$Smoke = ordered(data$Smoke, levels = c("Never", "Occas", "Regul", "Heavy"))
 model1 = polr(Smoke ~ Height + Pulse, data=data)
@@ -60,6 +66,7 @@ summary(model1)
 dc(model1, values1 = c(150,mean(MASS::survey$Pulse,na.rm=TRUE)),
   values2 = c(151,mean(MASS::survey$Pulse,na.rm=TRUE)))
 # all differences are significant as the confidence intervals do not include 0
+}
 }
 
 \keyword{ models }

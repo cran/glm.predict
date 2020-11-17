@@ -1,21 +1,20 @@
-\name{basepredict.glm}
-\alias{basepredict.glm}
+\name{basepredict.tobit}
+\alias{basepredict.tobit}
 
 \title{
 predicted value
 }
 \description{
-The function calculates the predicted value with the confidence interval. It can be used for any
-glm model.
+The function calculates the predicted value with the confidence interval for a tobit model.
 }
 \usage{
-\method{basepredict}{glm}(model, values, sim.count=1000, conf.int=0.95, sigma=NULL, set.seed=NULL,
+\method{basepredict}{tobit}(model, values, sim.count=1000, conf.int=0.95, sigma=NULL, set.seed=NULL,
   type = c("any", "simulation", "bootstrap"))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{model}{
-the model Object generated with glm() or glm.nb()
+the model Object generated with tobit()
 }
   \item{values}{
 the values of the case as vector in the order how they appear in the summary(model) Estimate
@@ -33,8 +32,7 @@ OPTIONAL the variance-covariance matrix, can be changed when having for example 
 OPTIONAL set a seed for the random number generator
 }
   \item{type}{
-OPTIONAL choose between simulation and bootstrap, "any" chooses between those two
-according to the number of cases (bootstrap if n < 1000)
+OPTIONAL only simulation is supported for tobit()
 }
 }
 \details{
@@ -51,10 +49,11 @@ according to the number of cases (bootstrap if n < 1000)
 }
 
 \examples{
-model1 = glm(Sex ~ Height + Smoke + Pulse, data=MASS::survey, family=binomial(link=logit))
+library(AER)
+model1 = tobit(Age ~ Height + Pulse, right = 65, data=MASS::survey)
 summary(model1)
-# predicted probability of a non smoking person with height 150 and average pulse
-basepredict(model1, c(1,150,1,0,0,mean(MASS::survey$Pulse,na.rm=TRUE)))
+# Person with a height of 160 and a pulse of 80
+basepredict(model1, values = c(1,160,80))
 }
 
 \keyword{ models }

@@ -11,7 +11,8 @@ glm, polr or multinom model.
 }
 \usage{
 predicts(model, values, position = NULL, sim.count = 1000, conf.int = 0.95, 
-  sigma = NULL, set.seed = NULL, doPar = TRUE)
+  sigma = NULL, set.seed = NULL, doPar = TRUE,
+  type = c("any", "simulation", "bootstrap"))
 }
 \arguments{
   \item{model}{
@@ -26,7 +27,7 @@ The values must be in the following way: \emph{"value1;value2;value3;..."}. Each
 	\item \strong{"median"}: takes the median of that variable (can only be used when the variable is numeric)
 	\item \strong{"mode"}: takes the mode of that variable
 	\item \strong{"Q4"}: takes the quartiles (0,0.25,0.5,0.75,1) of that variable (other number for other quantiles)
-	\item \strong{"min"}: takes the mimimum of that variable
+	\item \strong{"min"}: takes the minimum of that variable
 	\item \strong{"max"}: takes the maximum of that variable
 	\item \strong{from-to,by}: takes all values from "from" to "to" with the distance "by" (for example: "160-180,5" --> 160,165,170,175,180)
 	\item \strong{from-to}: same as from-to,by with by=1 (for example: "2-8" --> 2,3,4,5,6,7,8)
@@ -37,6 +38,7 @@ The values must be in the following way: \emph{"value1;value2;value3;..."}. Each
 	\item \strong{log(value1,value2,value3,...)}: takes the  log of the given values (for example: "160,180" --> 160,180)
 	\item \strong{log(value1)}: takes the log of the given value (for example: "5.34" --> 5.34)
 	\item \strong{"F"}: takes all values of a factor/character
+	\item \strong{"F(1,4,7)"}: takes the first, fourth and seventh level of a factor/character
 	\item \strong{"F(2)"}: takes the second level of a factor/character
 }
 }
@@ -52,13 +54,17 @@ OPTIONAL numbers of simulations to be done by the function. default: 1000
 OPTIONAL the confidence interval used by the function. default: 0.95
 }
   \item{sigma}{
-OPTIONAL the variance-covairance matrix, can be changed when having for exaple robust or clustered vcov. default: vcov(model)
+OPTIONAL the variance-covariance matrix, can be changed when having for example robust or clustered vcov. default: vcov(model)
 }
   \item{set.seed}{
 OPTIONAL set a seed for the random number generator
 }
   \item{doPar}{
 OPTIONAL if the code should run parallel if more than 2 cores are detected
+}
+  \item{type}{
+OPTIONAL choose between simulation and bootstrap, "any" chooses between those two
+according to the number of cases (bootstrap if n < 1000)
 }
 }
 \details{
@@ -73,11 +79,13 @@ OPTIONAL if the code should run parallel if more than 2 cores are detected
 }
 
 \examples{
+\dontrun{
 model1 = glm(Sex ~ Height + Smoke + Pulse, data=MASS::survey, family=binomial(link=logit))
 summary(model1)
 # comparing person with hight 150 to 160, 160 to 170, 170 to 180, 180 to 190 
 # with all combination of(non-)smokers and a median of pulse 
 predicts(model1, "150-190,10;F;median", position = 1, doPar = FALSE)
+}
 }
 
 \keyword{ models }

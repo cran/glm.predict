@@ -1,10 +1,31 @@
-predicts = function(model, values, position=NULL, sim.count=1000, conf.int=0.95, sigma=NULL, set.seed=NULL, doPar = TRUE){
+predicts = function(model, values, position=NULL, sim.count=1000, conf.int=0.95, sigma=NULL, set.seed=NULL, doPar = TRUE,
+                    type = c("any", "simulation", "bootstrap")){
   if(!is.character(values)){
     stop("values must be given as character!")
   }
   
+  if(length(unlist(strsplit(values, ";"))) != ncol(model.frame(model)) - 1){
+    stop("The length of values does not match the number of independend variables.")
+  }
+  
+  if(!is.null(position) && (!is.numeric(position) || position != round(position))){
+    stop("position must be a whole number or NULL.")
+  }
+  
   if(inherits(model, "multinom")){
     doPar = F
+  }
+  
+  type = match.arg(type)
+  
+  if(type == "any"){
+    if(nrow(model.frame(model)) < 500){
+      type = "bootstrap"
+      message("Type not specified: Using bootstrap as n < 500")
+    }else{
+      type = "simulation"
+      message("Type not specified: Using simulation as n >= 500")
+    }
   }
   
   # remove any empty space in values
@@ -21,7 +42,7 @@ predicts = function(model, values, position=NULL, sim.count=1000, conf.int=0.95,
   }else{
     dv_levels = NULL
   }
-  #data = full_data[,-1]  # data without y
+  # data = full_data[,-1]  # data without y
   matrix = stats::model.matrix(model)
   
   # get base combinations
@@ -48,60 +69,69 @@ predicts = function(model, values, position=NULL, sim.count=1000, conf.int=0.95,
   }
   
   
-  cores = parallel::detectCores() - 1
+  chk <- Sys.getenv("_R_CHECK_LIMIT_CORES_", "")
+  
+  if (nzchar(chk) && chk == "TRUE") {
+    # use 2 cores in CRAN/Travis/AppVeyor
+    cores <- 2L
+  } else {
+    # use all cores in devtools::test()
+    cores <- parallel::detectCores()
+  }
+  
   if(doPar && cores > 1){
     # set up parallel cluster
     cl = parallel::makeCluster(cores)
     
     if(is.null(position)){
-      parallel::clusterExport(cl, varlist = c("basepredict.glm","basepredict.polr","basepredict.multinom"), envir=environment())
+      parallel::clusterExport(cl, varlist = c("basepredict.lm","basepredict.glm","basepredict.polr","basepredict.multinom","basepredict.tobit", "calculate_glm_pred"), envir=environment())
       parallel::clusterEvalQ(cl, library("MASS"))
       parallel::clusterEvalQ(cl, library("nnet"))
       
       # simulate
       if(is.null(dv_levels)){
-        result[, 1:3] = t(parallel::parApply(cl, combinations, 1, basepredict, model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed))
+        result[, 1:3] = t(parallel::parApply(cl, combinations, 1, basepredict, model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed, type = type))
       }else{
-        temp = parallel::parApply(cl, combinations, 1, basepredict, model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed)
+        temp = parallel::parApply(cl, combinations, 1, basepredict, model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed, type = type)
         result[, 1:3] = t(do.call(rbind,lapply(1:3, getResultMatrix, result_matrix = temp, levels = length(dv_levels), base.combinations = base.combinations)))
       }
     }else{
-      parallel::clusterExport(cl, varlist = c("dc.glm","dc.polr","dc.multinom", "simu.glm"), envir=environment())
+      parallel::clusterExport(cl, varlist = c("dc.lm", "dc.glm","dc.polr","dc.multinom", "calculate_glm_pred", "dc.tobit"), envir=environment())
       parallel::clusterEvalQ(cl, library("MASS"))
       parallel::clusterEvalQ(cl, library("nnet"))
       
       # simulate
       combinations = cbind(combinations_1,combinations_2)
       if(is.null(dv_levels)){
-        result[, 1:9] = t(parallel::parApply(cl, combinations, 1, dc, model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed))
+        result[, 1:9] = t(parallel::parApply(cl, combinations, 1, dc, model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed, type = type))
         result[,  c("val1_lower", "val1_upper", "val2_mean", "val2_upper", "dc_mean", "dc_lower")] = 
           result[,  c("val2_mean", "dc_mean", "val1_lower", "dc_lower", "val1_upper", "val2_upper")]
       }else{
-        temp = parallel::parApply(cl, combinations, 1, dc,  model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed)
+        temp = parallel::parApply(cl, combinations, 1, dc,  model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed, type = type)
         result[, 1:9] = t(do.call(rbind,lapply(1:9, getResultMatrix, result_matrix = temp, levels = length(dv_levels), base.combinations = base.combinations_1)))
       }
     }
 
-    # stopp parallel cluster
+    # stop parallel cluster
     parallel::stopCluster(cl)
   }else{
     # simulate
     if(is.null(position)){
       if(is.null(dv_levels)){
-        result[, 1:3] = t(apply(combinations, 1, basepredict, model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed))
+        result[, 1:3] = t(apply(combinations, 1, basepredict, model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed, type = type))
       }else{
-        temp = apply(combinations, 1, basepredict, model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed)
+        temp = apply(combinations, 1, basepredict, model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed, type = type)
         result[, 1:3] = t(do.call(rbind,lapply(1:3, getResultMatrix, result_matrix = temp, levels = length(dv_levels), base.combinations = base.combinations)))
       }
       
     }else{
       combinations = cbind(combinations_1,combinations_2)
       if(is.null(dv_levels)){
-        result[, 1:9] = t(apply(combinations, 1, dc, model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed))
+        result[, 1:9] = t(apply(combinations, 1, dc, model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed, type = type))
         result[,  c("val1_lower", "val1_upper", "val2_mean", "val2_upper", "dc_mean", "dc_lower")] = 
           result[,  c("val2_mean", "dc_mean", "val1_lower", "dc_lower", "val1_upper", "val2_upper")]
       }else{
-        temp = apply(combinations, 1, dc, model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed)
+        temp = apply(combinations, 1, dc, model = model, sim.count = sim.count, conf.int = conf.int, sigma = sigma, set.seed = set.seed, type = type)
         result[, 1:9] = t(do.call(rbind,lapply(1:9, getResultMatrix, result_matrix = temp, levels = length(dv_levels), base.combinations = base.combinations_1))) 
       }
     }

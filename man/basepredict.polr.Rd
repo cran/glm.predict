@@ -9,7 +9,8 @@ The function calculates the predicted value with the confidence interval. It can
 polr model.
 }
 \usage{
-\method{basepredict}{polr}(model, values, sim.count=1000, conf.int=0.95, sigma=NULL, set.seed=NULL)
+\method{basepredict}{polr}(model, values, sim.count=1000, conf.int=0.95, sigma=NULL, set.seed=NULL,
+  type = c("any", "simulation", "bootstrap"))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -26,18 +27,22 @@ OPTIONAL numbers of simulations to be done by the function. default: 1000
 OPTIONAL the confidence interval used by the function. default: 0.95
 }
   \item{sigma}{
-OPTIONAL the variance-covairance matrix, can be changed when having for exaple robust or clustered vcov. default: vcov(model)
+OPTIONAL the variance-covariance matrix, can be changed when having for example robust or clustered vcov. default: vcov(model)
 }
   \item{set.seed}{
 OPTIONAL set a seed for the random number generator
+}
+  \item{type}{
+OPTIONAL choose between simulation and bootstrap, "any" chooses between those two
+according to the number of cases (bootstrap if n < 1000)
 }
 }
 \details{
   The function makes a simulation for the two cases and compares them to each other. 
 }
 \value{
-  The output is a matrix have in the first colone the predicted value, in the second
-  colone the lower value of the confidence interval and in the third colone the upper value
+  The output is a matrix have in the first column the predicted value, in the second
+  column the lower value of the confidence interval and in the third column the upper value
   of the confidence interval.
 }
 
@@ -46,12 +51,14 @@ OPTIONAL set a seed for the random number generator
 }
 
 \examples{
+\dontrun{
 data = MASS::survey
 data$Smoke = ordered(data$Smoke, levels = c("Never", "Occas", "Regul", "Heavy"))
 model1 = polr(Smoke ~ Height + Pulse, data=data)
 summary(model1)
 # predicted probability of smoking of a person with height 170 and an average pulse
 basepredict(model1, c(170,mean(MASS::survey$Pulse,na.rm=TRUE)))
+}
 }
 
 \keyword{ models }
