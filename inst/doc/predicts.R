@@ -4,10 +4,7 @@ library(glm.predict)
 set.seed(1848)
 
 ## -----------------------------------------------------------------------------
-devtools::install_github("benjaminschlegel/schlegel")
-
-## -----------------------------------------------------------------------------
-df_selects = schlegel::selects2015
+df_selects = selects2015
 logit_model = glm(participation ~ age * gender, family = binomial, data = df_selects)
 summary(logit_model)
 
@@ -43,7 +40,7 @@ mean(predProb)
 quantile(predProb, probs = c(0.025, 0.975))
 
 ## -----------------------------------------------------------------------------
-df_selects = schlegel::selects2015
+df_selects = selects2015
 library(MASS)
 ologit_model = polr(opinion_eu_membership ~ vote_choice * lr_self + age + gender, 
                     data = df_selects, Hess = TRUE)

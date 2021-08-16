@@ -1,20 +1,21 @@
-\name{basepredict.tobit}
-\alias{basepredict.tobit}
+\name{basepredict.mlogit}
+\alias{basepredict.mlogit}
 
 \title{
 predicted value
 }
 \description{
-The function calculates the predicted value with the confidence interval for a tobit model.
+The function calculates the predicted value with the confidence interval. It can be used for any
+mlogit model.
 }
 \usage{
-\method{basepredict}{tobit}(model, values, sim.count=1000, conf.int=0.95, sigma=NULL, set.seed=NULL,
+\method{basepredict}{mlogit}(model, values, sim.count=1000, conf.int=0.95, sigma=NULL, set.seed=NULL,
   type = c("any", "simulation", "bootstrap"), summary = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{model}{
-the model Object generated with tobit()
+the model Object generated with mlogit()
 }
   \item{values}{
 the values of the case as vector in the order how they appear in the summary(model) Estimate
@@ -32,7 +33,7 @@ OPTIONAL the variance-covariance matrix, can be changed when having for example 
 OPTIONAL set a seed for the random number generator
 }
   \item{type}{
-OPTIONAL only simulation is supported for tobit()
+type is ignored as only simulation is implemented
 }
   \item{summary}{
 OPTIONAL if mean/quantiles should be return or all simulated values (default: TRUE)	
@@ -42,7 +43,7 @@ OPTIONAL if mean/quantiles should be return or all simulated values (default: TR
   The function makes a simulation for the two cases and compares them to each other. 
 }
 \value{
-  The output is a 3x3 matrix having in the first column the predicted value, in the second
+  The output is a matrix have in the first column the predicted value, in the second
   column the lower value of the confidence interval and in the third column the upper value
   of the confidence interval.
 }
@@ -52,11 +53,26 @@ OPTIONAL if mean/quantiles should be return or all simulated values (default: TR
 }
 
 \examples{
-library(AER)
-model1 = tobit(Age ~ Height + Pulse, right = 65, data=MASS::survey)
+\dontrun{
+# devtools::install_github("benjaminschlegel/schlegel")
+df_selects = schlegel::selects2015
+df_selects_withoutNA = df_selects %>% 
+  filter(vote_choice != "other") %>% 
+  mutate(vote_choice = factor(vote_choice)) %>% 
+  select(age, gender, vote_choice, starts_with("lr_")) %>% 
+  na.omit()
+mlogit_data = dfidx::dfidx(df_selects_withoutNA, varying = 5:11, 
+                    sep = "_", shape = "wide", 
+                    choice = "vote_choice")
+
+mlogit_data$distance = abs(mlogit_data$lr - mlogit_data$lr_self)
+
+model1 = mlogit::mlogit(vote_choice ~ distance | lr_self + 
+                          gender, data = mlogit_data)
 summary(model1)
-# Person with a height of 160 and a pulse of 80
-basepredict(model1, values = c(1,160,80))
+# predicted probability of a left male person with a distance of 2
+basepredict(model1, c(1, 2, 0, 0))
+}
 }
 
 \keyword{ models }

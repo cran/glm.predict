@@ -1,23 +1,23 @@
-\name{dc.glm}
-\alias{dc.glm}
+\name{dc.mlogit}
+\alias{dc.mlogit}
 
 \title{
 predicted values and discrete change
 }
 \description{
 The function calculates the predicted values and the difference of
-two cases with the confidence interval. It can be used for any
-glm model.
+two cases with the confidence interval. It can be used for a
+mlogit model.
 }
 \usage{
-\method{dc}{glm}(model, values = NULL, sim.count = 1000, conf.int = 0.95, 
+\method{dc}{mlogit}(model, values = NULL, sim.count = 1000, conf.int = 0.95, 
   sigma = NULL, set.seed = NULL, values1 = NULL, values2 = NULL,
   type = c("any", "simulation", "bootstrap"), summary = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{model}{
-the model-Object generated with glm() or glm.nb()
+the model-Object generated with mlogit()
 }
   \item{values}{
 the values of case 1 and 2 as vector in the order how they appear in the summary(model) Estimate. Values is if values1 and values2 are specified after each other in the same vector. Either values or values1 and values2 have to be specified.
@@ -41,8 +41,7 @@ the values of case 1 as vector in the order how they appear in the summary(model
 the values of case 2 as vector in the order how they appear in the summary(model) Estimate. Has to be defined if values is not defined.
 }
   \item{type}{
-OPTIONAL choose between simulation and bootstrap, "any" chooses between those two
-according to the number of cases (bootstrap if n < 1000)
+type is ignored as only simulation is implemented
 }
   \item{summary}{
 OPTIONAL if mean/quantiles should be return or all simulated values (default: TRUE)	
@@ -62,14 +61,26 @@ OPTIONAL if mean/quantiles should be return or all simulated values (default: TR
 }
 
 \examples{
-model1 = glm(Sex ~ Height + Smoke + Pulse, data=MASS::survey, family=binomial(link=logit))
+\dontrun{
+# devtools::install_github("benjaminschlegel/schlegel")
+df_selects = schlegel::selects2015
+df_selects_withoutNA = df_selects %>% 
+  filter(vote_choice != "other") %>% 
+  mutate(vote_choice = factor(vote_choice)) %>% 
+  select(age, gender, vote_choice, starts_with("lr_")) %>% 
+  na.omit()
+mlogit_data = dfidx::dfidx(df_selects_withoutNA, varying = 5:11, 
+                    sep = "_", shape = "wide", 
+                    choice = "vote_choice")
+
+mlogit_data$distance = abs(mlogit_data$lr - mlogit_data$lr_self)
+
+model1 = mlogit::mlogit(vote_choice ~ distance | lr_self + 
+                          gender, data = mlogit_data)
 summary(model1)
-# comparing a person with the height 150cm to 151cm
-dc(model1, values1 = c(1,150,1,0,0,mean(MASS::survey$Pulse,na.rm=TRUE)),
-  values2 = c(1,151,1,0,0,mean(MASS::survey$Pulse,na.rm=TRUE)))
-# the higher person has a greater probability to be a man
-# the difference is significant, because the confidence interval
-# does not include the 0
+# predicted probability of a left male person with a distance of 2
+dc(model1, c(1, 2, 0, 0, 1, 2, 10, 0))
+}
 }
 
 \keyword{ models }

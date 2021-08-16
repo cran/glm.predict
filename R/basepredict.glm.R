@@ -1,5 +1,5 @@
 basepredict.glm = function(model, values, sim.count = 1000, conf.int = 0.95, sigma = NULL, set.seed = NULL, 
-                           type = c("any", "simulation", "bootstrap")){
+                           type = c("any", "simulation", "bootstrap"), summary = TRUE){
   # check inputs
   if(sum("glm" %in% class(model)) == 0){
     stop("model has to be of type glm()")
@@ -18,13 +18,20 @@ basepredict.glm = function(model, values, sim.count = 1000, conf.int = 0.95, sig
   }
   
   type = match.arg(type)
+  
+  if(type == "bootstrap" && "svyglm" %in% class(model)){
+    warning("Boostrap not supported for survey()-models, using simulations instead.")
+    type = "simulation"
+  }
 
   # model type
   model.type = family(model)
   link = model.type[2]
   
   if(type == "any"){
-    if(nrow(model$data) < 500){
+    if("svyglm" %in% class(model)){
+      type = "simulation"
+    }else if(nrow(model$data) < 500){
       type = "bootstrap"
       message("Type not specified: Using bootstrap as n < 500")
     }else{
@@ -56,6 +63,11 @@ basepredict.glm = function(model, values, sim.count = 1000, conf.int = 0.95, sig
     betas_boot = do.call('rbind', lapply(seq_len(sim.count), boot, model))
     # get the predicted probabilities/values with the inverse link function
     pred = calculate_glm_pred(betas_boot, values, link)
+  }
+  
+  # return all simulated / bootstrapped values if summary is FALSE
+  if(!summary){
+    return(pred)
   }
   
   # calculate mean and confident interval

@@ -1,4 +1,4 @@
-dc.multinom = function(model, values = NULL, sim.count = 1000, conf.int = 0.95, sigma = NULL, set.seed = NULL, values1 = NULL, values2 = NULL,
+dc.mlogit = function(model, values = NULL, sim.count = 1000, conf.int = 0.95, sigma = NULL, set.seed = NULL, values1 = NULL, values2 = NULL,
                        type = c("any", "simulation", "bootstrap"), summary = TRUE){
   
   # check inputs
@@ -10,13 +10,17 @@ dc.multinom = function(model, values = NULL, sim.count = 1000, conf.int = 0.95, 
     values1 = values[1 : (l/2)]
     values2 = values[(l/2 + 1) : l]
   }
-  if(sum("multinom" %in% class(model)) == 0){
-    stop("model has to be of type multinom()")
+  if(sum("mlogit" %in% class(model)) == 0){
+    stop("model has to be of type mlogit()")
   }
-  if(length(values1) != ncol(coef(model))){
+  choices = names(model$freq)
+  beta_names = names(coef(model))
+  n_multinomial = do.call(sum, lapply(choices, grepl, beta_names))
+  n_conditional = length(beta_names) - n_multinomial
+  if(length(values1) != n_multinomial / (length(choices) - 1) + n_conditional){
     stop("the length of values1 is not identical to the number of coefficient of the model")
   }
-  if(length(values2) != ncol(coef(model))){
+  if(length(values2) != n_multinomial / (length(choices) - 1) + n_conditional){
     stop("the length of values2 is not identical to the number of coefficient of the model")
   }
   if(!is.numeric(sim.count) | round(sim.count) != sim.count){
@@ -31,69 +35,49 @@ dc.multinom = function(model, values = NULL, sim.count = 1000, conf.int = 0.95, 
   
   type = match.arg(type)
   
-  if(type == "any"){
-    if(nrow(model.frame(model)) < 500){
-      type = "bootstrap"
-      message("Type not specified: Using bootstrap as n < 500")
-    }else{
-      type = "simulation"
-      message("Type not specified: Using simulation as n >= 500")
-    }
+  if(type == "bootstrap"){
+    warning("Bootstrap not supported for mlogit. Using simulation instead.")
   }
+  type = "simulation"
   
   betas = coef(model)
   if(is.null(sigma)){
     sigma = vcov(model)
   }
-  n.coefs = ncol(betas)
-  n = nrow(betas)
   
-  if(type == "simulation"){
-    betas_draw = matrix(nrow = sim.count, ncol = n.coefs * n)
-    
-    for(j in 1:n){
-      from = (n.coefs*(j-1)+1)
-      to = (n.coefs*j)
-      if(!is.null(set.seed)){
-        set.seed(set.seed)
-      }
-      betas_draw[, from:to] = MASS::mvrnorm(sim.count, betas[j, ], sigma[from:to, from:to])
-    }
-  }else{ #
-    boot = function(x, model){
-      data = model.frame(model)
-      sample_data = data[sample(seq_len(nrow(data)), replace = TRUE), ]
-      unlist(as.list(t(coef(update(model, data = sample_data)))))
-      
-    }
-    betas_draw = do.call('rbind', lapply(seq_len(sim.count), boot, model))
-  }
+  # simulation
+  betas_draw = MASS::mvrnorm(sim.count, betas, sigma)
   
-  x = matrix(ncol = 2, nrow = n + 1)
-  pred1 = pred2 = matrix(nrow = n + 1, ncol = sim.count)
+  x = matrix(ncol = 2, nrow = length(choices))
+  pred1 = pred2 = matrix(nrow = length(choices), ncol = sim.count)
   
   for(i in 1:sim.count){
-    sim.temp = NULL
-    for(j in 1:n){
-      from = n.coefs * (j-1) + 1
-      to = n.coefs * j
-      if(is.null(sim.temp)){
-        sim.temp = betas_draw[i, from:to]
-      }else{
-        sim.temp = rbind(sim.temp, betas_draw[i,from:to])
-      }
-      
+    current_betas = betas_draw[i,]
+    n = length(choices) - 1
+    pos_conditional_vars = (n+1):(n+n_conditional)
+    pos_multinomial_vars = max(pos_conditional_vars) + 
+      (seq_len((length(betas) - max(pos_conditional_vars)) / n) - 1) * n 
+    sim_temp = current_betas[seq_len(n)]
+    for(pos in pos_conditional_vars){
+      sim_temp = cbind(sim_temp, current_betas[pos])
     }
-    x[,1] = c(0, sim.temp %*% values1)
-    x[,2] = c(0, sim.temp %*% values2)
     
-    e = exp(x)
+    for(j in pos_multinomial_vars){
+      sim_temp = cbind(sim_temp, current_betas[j + seq_len(n)])
+    }
     
-    for(j in 1:(n+1)){
-      pred1[j,i] = e[j, 1] / colSums(e)[1]
-      pred2[j,i] = e[j, 2] / colSums(e)[2]
-    }    
+    yhat1 = c(0, sim_temp %*% values1)
+    yhat2 = c(0, sim_temp %*% values2)
+    e1 = exp(yhat1)
+    e2 = exp(yhat2)
+    
+    for(j in seq_along(choices)){
+      pred1[j, i] = e1[j] / sum(e1)
+      pred2[j, i] = e2[j] / sum(e2)
+    }
   }
+  
+  
   
   
   diff = pred1 - pred2
@@ -108,7 +92,7 @@ dc.multinom = function(model, values = NULL, sim.count = 1000, conf.int = 0.95, 
   colnames(result) = c("Mean1", paste0("1:", 100 * confint_lower, "%"), paste0("1:", 100 * (1 - confint_lower), "%"), 
                        "Mean2", paste0("2:", 100 * confint_lower, "%"), paste0("2:", 100 * (1 - confint_lower), "%"), 
                        "Mean.Diff", paste0("diff:", 100 * confint_lower, "%"), paste0("diff:", 100 * (1 - confint_lower), "%"))
-  rownames(result) = model$lev
+  rownames(result) = choices
   
   for(j in 1:(n+1)){
     result[j,] = c(mean(pred1[j,]), quantile(pred1[j,], probs = c(confint_lower, 1 - confint_lower)), 

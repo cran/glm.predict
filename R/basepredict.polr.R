@@ -1,5 +1,5 @@
 basepredict.polr = function(model, values, sim.count = 1000, conf.int = 0.95, sigma=NULL, set.seed=NULL,
-                            type = c("any", "simulation", "bootstrap")){
+                            type = c("any", "simulation", "bootstrap"), summary = TRUE){
   
   # check inputs
   if(sum("polr" %in% class(model)) == 0){
@@ -72,7 +72,9 @@ basepredict.polr = function(model, values, sim.count = 1000, conf.int = 0.95, si
     kappa[[i]][,] = estim_draw[,l+i]
   }
   
-
+  if(is.null(dim(beta_draw))){
+    beta_draw = as.matrix(beta_draw)
+  }
   for(j in 1:level.count){
     if(j == 1){
       pred[,j] = exp(kappa[[j]] - beta_draw %*% x) / (1 + exp(kappa[[j]]  - beta_draw  %*% x))
@@ -83,7 +85,11 @@ basepredict.polr = function(model, values, sim.count = 1000, conf.int = 0.95, si
         exp(kappa[[j-1]] - beta_draw %*% x) / (1 + exp(kappa[[j-1]] - beta_draw %*% x))
     }
   }
-
+  
+  # return all simulated / bootstrapped values if summary is FALSE
+  if(!summary){
+    return(pred)
+  }
   
   # prepare the results
   confint_lower = (1 - conf.int) / 2
