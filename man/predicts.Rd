@@ -11,7 +11,7 @@ glm, polr or multinom model.
 }
 \usage{
 predicts(model, values, position = NULL, sim.count = 1000, conf.int = 0.95, 
-  sigma = NULL, set.seed = NULL, doPar = TRUE,
+  sigma = NULL, set.seed = NULL, doPar = FALSE,
   type = c("any", "simulation", "bootstrap"))
 }
 \arguments{
@@ -23,16 +23,17 @@ The values of cases as character in the order how they appear in the summary(mod
 The values must be in the following way: \emph{"value1;value2;value3;..."}. Each one of the values can be one of the following:
 
 \itemize{
+  \item \strong{"all"}: takes all unique values of that variable
 	\item \strong{"mean"}: takes the mean of that variable (can only be used when the variable is numeric)
-	\item \strong{"median"}: takes the median of that variable (can only be used when the variable is numeric)
+	\item \strong{"median"}: takes the median of that variable (assumes for factors that they are correctly ordered)
 	\item \strong{"mode"}: takes the mode of that variable
 	\item \strong{"Q4"}: takes the quartiles (0,0.25,0.5,0.75,1) of that variable (other number for other quantiles)
 	\item \strong{"min"}: takes the minimum of that variable
 	\item \strong{"max"}: takes the maximum of that variable
 	\item \strong{from-to,by}: takes all values from "from" to "to" with the distance "by" (for example: "160-180,5" --> 160,165,170,175,180)
-	\item \strong{from-to}: same as from-to,by with by=1 (for example: "2-8" --> 2,3,4,5,6,7,8)
-	\item \strong{value1,value2,value3,...}: takes the given values (for example: "160,180" --> 160,180)
-	\item \strong{value1}: takes the given value (for example: "5.34" --> 5.34)
+	\item \strong{from-to}: same as from-to,by with by=1 (for example: "2-8" --> 2,3,4,5,6,7,8); also works for factors and takes the given levels form their position
+	\item \strong{value1,value2,value3,...}: takes the given values (for example: "160,180" --> 160,180); also works for factors and takes the given levels form their position
+	\item \strong{value1}: takes the given value (for example: "5.34" --> 5.34); also works for factors and takes the given level form its position
 		\item \strong{log(from-to,by)}: takes the log of all values from "from" to "to" with the distance "by" (for example: "160-180,5" --> 160,165,170,175,180)
 	\item \strong{log(from-to)}: same as log(from-to,by) with by=1 (for example: "2-8" --> 2,3,4,5,6,7,8)
 	\item \strong{log(value1,value2,value3,...)}: takes the  log of the given values (for example: "160,180" --> 160,180)
@@ -64,7 +65,7 @@ OPTIONAL if the code should run parallel if more than 2 cores are detected
 }
   \item{type}{
 OPTIONAL choose between simulation and bootstrap, "any" chooses between those two
-according to the number of cases (bootstrap if n < 1000)
+according to the number of cases (bootstrap if n < 500)
 }
 }
 \details{

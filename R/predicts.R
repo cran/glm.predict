@@ -1,9 +1,12 @@
-predicts = function(model, values, position=NULL, sim.count=1000, conf.int=0.95, sigma=NULL, set.seed=NULL, doPar = TRUE,
+predicts = function(model, values, position=NULL, sim.count=1000, conf.int=0.95, sigma=NULL, set.seed=NULL, doPar = FALSE,
                     type = c("any", "simulation", "bootstrap")){
   if(!is.character(values)){
     stop("values must be given as character!")
   }
   full_data = stats::model.frame(model)
+  if(any(c("lmerMod", "glmerMod") %in% class(model))){
+    full_data = full_data[,-which(colnames(full_data) %in% names(ranef(model)))]
+  }
   
   # collapse values to one character, if given as vector
   if(length(values) > 1){
@@ -38,6 +41,7 @@ predicts = function(model, values, position=NULL, sim.count=1000, conf.int=0.95,
   
   if(inherits(model, "multinom")){
     doPar = F
+    warning("Parallel version not supported for multinom() models. Setting doPar to FALSE.")
   }
   
   type = match.arg(type)
