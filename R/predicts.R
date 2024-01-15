@@ -1,9 +1,15 @@
-predicts = function(model, values, position=NULL, sim.count=1000, conf.int=0.95, sigma=NULL, set.seed=NULL, doPar = FALSE,
+predicts = function(model, values, position = NULL, sim.count = 1000, conf.int=0.95, sigma = NULL, set.seed = NULL, doPar = FALSE,
                     type = c("any", "simulation", "bootstrap")){
   if(!is.character(values)){
     stop("values must be given as character!")
   }
-  full_data = stats::model.frame(model)
+  if("vglm" %in% class(model)){
+    full_data = VGAM::model.frame(model)
+  }else{
+    full_data =  stats::model.frame(model)
+  }
+                     
+                     
   if(any(c("lmerMod", "glmerMod") %in% class(model))){
     full_data = full_data[,-which(colnames(full_data) %in% names(ranef(model)))]
   }
@@ -11,6 +17,10 @@ predicts = function(model, values, position=NULL, sim.count=1000, conf.int=0.95,
   # collapse values to one character, if given as vector
   if(length(values) > 1){
     values = paste(values, collapse = ";")
+  }
+  
+  if("tobit" %in% class(model)){
+    colnames(full_data)[1] = "y"
   }
   
   # reshape mlogit data
@@ -29,8 +39,7 @@ predicts = function(model, values, position=NULL, sim.count=1000, conf.int=0.95,
   }
   
   # remove polynomial values
-  full_data = full_data[, grep("^[^(][^:\\^]*$", colnames(full_data), value = T)]
-  
+  full_data = full_data[, grep("^[^(][^:\\^]*$", colnames(full_data), value = TRUE)]
   if(length(unlist(strsplit(values, ";"))) != ncol(full_data) - 1){
     stop("The length of values does not match the number of independend variables.")
   }
@@ -39,15 +48,15 @@ predicts = function(model, values, position=NULL, sim.count=1000, conf.int=0.95,
     stop("position must be a whole number or NULL.")
   }
   
-  if(inherits(model, "multinom")){
-    doPar = F
+  if(inherits(model, "multinom") && doPar){
+    doPar = FALSE
     warning("Parallel version not supported for multinom() models. Setting doPar to FALSE.")
   }
   
   type = match.arg(type)
   
   if(type == "any"){
-    if(nrow(model.frame(model)) < 500){
+    if(nrow(full_data) < 500){
       type = "bootstrap"
       message("Type not specified: Using bootstrap as n < 500")
     }else{
@@ -66,6 +75,8 @@ predicts = function(model, values, position=NULL, sim.count=1000, conf.int=0.95,
     }else{
       dv_levels = levels(as.factor(full_data[, 1]))
     }
+  }else if(inherits(model,"vglm")){
+    dv_levels = model@extra$colnames.y
   }else{
     dv_levels = NULL
   }

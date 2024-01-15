@@ -9,10 +9,18 @@ getCombinations = function(matrix, base.combinations, model, dv_levels){
     ncol = length(unique(cnames))
   }
   
-  if(!inherits(model,"polr")){
+  if(inherits(model,"vglm")){
+    cnames = colnames(matrix)
+    cnames = gsub(":[0-9]+", "", cnames)
+    ncol = length(unique(cnames)) - 1
+  }
+  
+  if(!inherits(model,"polr") & !inherits(model,"vglm")){
     combinations = matrix(NA, nrow = nrow(base.combinations), ncol = ncol)
     combinations[,1] = 1
     c = c + 1
+  }else if(inherits(model,"vglm")){
+    combinations = matrix(NA, nrow = nrow(base.combinations), ncol = ncol)
   }else{
     combinations = matrix(NA, nrow = nrow(base.combinations), ncol = ncol - 1)
   }
@@ -20,8 +28,10 @@ getCombinations = function(matrix, base.combinations, model, dv_levels){
   c = c + ncol(base.combinations)
   
   # add interactions and polygons
-  if(ncol > ncol(base.combinations) + 1){ # add interactions
-    for(name in colnames(matrix)){
+  cutpoint = ifelse(inherits(model,"vglm"), ncol(base.combinations), ncol(base.combinations) + 1)
+  if(ncol > cutpoint){ # add interactions
+    cnames = unique(gsub(":[0-9]+", "",colnames(matrix)))
+    for(name in cnames){
       if(grepl(":", name)){
         parts = unlist(strsplit(name, ":"))
         if(dim(base.combinations)[1]>1){
