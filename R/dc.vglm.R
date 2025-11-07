@@ -82,7 +82,12 @@ dc.vglm = function(model, values = NULL, sim.count = 1000, conf.int = 0.95, sigm
       colnames(data)[1] = gsub("ordered\\(", "", colnames(data)[1])
       colnames(data)[1] = gsub("\\)", "", colnames(data)[1])
       sample_data = data[sample(seq_len(nrow(data)), replace = TRUE), ]
-      model_updated = update(model, data = sample_data)
+      if("(weights)" %in% colnames(data)){
+        w <- sample_data[["(weights)"]]
+        model_updated = coef(update(model, data = sample_data, weights = w))
+      }else{
+        model_updated = coef(update(model, data = sample_data))
+      }
       model_updated@coefficients
     }
     estim_draw = do.call('rbind', lapply(seq_len(sim.count), boot, model))
@@ -92,7 +97,7 @@ dc.vglm = function(model, values = NULL, sim.count = 1000, conf.int = 0.95, sigm
   beta_draw = beta_draw * -1 #vglm has the wron sign compared to polr
   for(i in 1:kappa.count){
     byLevelCols = grep(":[1-9]", colnames(beta_draw))
-    cols = sort(c(byLevelCols[1:length(byLevelCols)-kappa.count %% kappa.count == i],
+    cols = sort(c(byLevelCols[(1:length(byLevelCols)-1)%%kappa.count + 1 == i],
                   seq_along(colnames(beta_draw))[-byLevelCols]))
     betaByKappa[[i]] = beta_draw[,cols]
     kappa[[i]][,] = estim_draw[,i]

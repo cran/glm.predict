@@ -77,7 +77,12 @@ dc.polr = function(model, values = NULL, sim.count = 1000, conf.int = 0.95, sigm
     boot = function(x, model){
       data = model.frame(model)
       sample_data = data[sample(seq_len(nrow(data)), replace = TRUE), ]
-      model_updated = update(model, data = sample_data)
+      if("(weights)" %in% colnames(data)){
+        w <- sample_data[["(weights)"]]
+        model_updated = coef(update(model, data = sample_data, weights = w))
+      }else{
+        model_updated = coef(update(model, data = sample_data))
+      }
       c(model_updated$coefficients, model_updated$zeta)
     }
     estim_draw = do.call('rbind', lapply(seq_len(sim.count), boot, model))

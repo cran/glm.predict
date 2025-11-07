@@ -57,7 +57,12 @@ dc.lmerMod = function(model, values = NULL, sim.count = 1000, conf.int = 0.95, s
     boot = function(x, model){
       data = model.frame(model)
       sample_data = data[sample(seq_len(nrow(data)), replace = TRUE), ]
-      fixef(update(model, data = sample_data))
+      if("(weights)" %in% colnames(data)){
+        w <- sample_data[["(weights)"]]
+        fixef(update(model, data = sample_data, weights = w))
+      }else{
+        fixef(update(model, data = sample_data))
+      }
     }
     betas_boot = do.call('rbind', lapply(seq_len(sim.count), boot, model))
     pred1 = betas_boot %*% values1
